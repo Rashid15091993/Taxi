@@ -12,6 +12,65 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
+    <RelativeLayout
+        android:id="@+id/rell"
+        android:layout_width="match_parent"
+        android:background="@color/cardview_dark_background"
+        android:layout_height="wrap_content"
+        android:layout_margin="18dp"
+        android:layout_above="@+id/custom_order_button">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/driver_photo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/profile"/>
+
+        <TextView
+            android:id="@+id/driver_name"
+            android:layout_toEndOf="@+id/driver_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:text="Имя водителя"
+            android:textColor="@android:color/background_light"
+            android:textSize="16dp"/>
+
+        <TextView
+            android:id="@+id/driver_phone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Номер телефона"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_toEndOf="@+id/driver_photo"
+            android:layout_below="@+id/driver_name"
+            android:textColor="@android:color/background_light"
+            android:textSize="16dp"/>
+
+        <TextView
+            android:id="@+id/driver_car"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Марка автомобиля"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_toEndOf="@+id/driver_photo"
+            android:layout_below="@+id/driver_phone"
+            android:textColor="@android:color/background_light"
+            android:textSize="16dp"/>
+
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/phone"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="10dp"/>
+
+    </RelativeLayout>
+
     <Button
         android:id="@+id/custom_setting_button"
         android:layout_width="180dp"
