@@ -12,6 +12,8 @@ import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -37,9 +39,12 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
 import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
@@ -71,6 +76,10 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
 
     private  ValueEventListener DriverLocationRefListener;
 
+    private TextView txtName, txtPhone, txtCarName;
+    private CircleImageView driverPhoto;
+    private RelativeLayout relativeLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,6 +102,14 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
         CustomDataBaseRefer = FirebaseDatabase.getInstance().getReference().child("Custom Requests");
         DriversAvailabRef = FirebaseDatabase.getInstance().getReference().child("Driver Available");
         DriverLocationRef = FirebaseDatabase.getInstance().getReference().child("Driver Working");
+
+        txtName = (TextView)findViewById(R.id.driver_name);
+        txtPhone = (TextView)findViewById(R.id.driver_phone);
+        txtCarName = (TextView)findViewById(R.id.driver_car);
+        driverPhoto = (CircleImageView)findViewById(R.id.driver_photo);
+        relativeLayout = findViewById(R.id.rell);
+
+        relativeLayout.setVisibility(View.INVISIBLE);
 
         settingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -288,6 +305,8 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
                             double LocationLat = 0;
                             double LocationLng = 0;
                             callTaxiButton.setText("Водитель найден!");
+                            getDriverInformacion();
+                            relativeLayout.setVisibility(View.VISIBLE);
 
                             if (driverLocationMap.get(0) != null) {
                                 LocationLat = Double.parseDouble(driverLocationMap.get(0).toString());
@@ -328,5 +347,36 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
 
                     }
                 });
+    }
+
+    private  void getDriverInformacion() {
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference()
+                .child("Users").child("Drivers").child(driverFoundID);
+
+        reference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists() && snapshot.getChildrenCount() > 0) {
+                    String name = snapshot.child("name").getValue().toString();
+                    String phone = snapshot.child("phone").getValue().toString();
+                    String carname = snapshot.child("carName").getValue().toString();
+
+                    txtName.setText(name);
+                    txtPhone.setText(phone);
+                    txtCarName.setText(carname);
+
+                    if(snapshot.hasChild("image")) {
+                        String image = snapshot.child("image").getValue().toString();
+                        Picasso.get().load(image).into(driverPhoto);
+                    }
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
     }
 }
