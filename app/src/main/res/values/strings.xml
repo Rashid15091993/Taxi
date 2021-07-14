@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Taxi</string>
+    <string name="customText">Я водитель</string>
+    <string name="driverText">Я клиент</string>
+    <string name="singInTextDriver">Войти</string>
+    <string name="signUpdTextDriver">Регистрация</string>
+    <string name="NoAccountDriver">Еще нет аккаунта</string>
+    <string name="statusDriver">Вход для водителей</string>
+    <string name="statusCustom">Вход для клиента</string>
+    <string name="noAccountCustom">Еще нет аккаунта</string>
+    <string name="title_activity_driver_maps">Map</string>
+    <string name="title_activity_custom_maps">Map</string>
+</resources>
