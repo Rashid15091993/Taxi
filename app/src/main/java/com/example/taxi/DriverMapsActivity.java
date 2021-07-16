@@ -3,15 +3,20 @@ package com.example.taxi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -35,8 +40,11 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
@@ -59,6 +67,12 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
 
     private ValueEventListener AssignedCustomPositionListener;
 
+    private ImageView callCustom;
+
+    private TextView txtName, txtPhone, txtCarName;
+    private CircleImageView customPhoto;
+    private RelativeLayout relativeLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +92,16 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
         settingDriverButton = (Button)findViewById(R.id.driver_setting_button);
 
         mapFragment.getMapAsync(this);
+
+        txtName = (TextView)findViewById(R.id.custom_name);
+        txtPhone = (TextView)findViewById(R.id.custom_phone);
+        customPhoto = (CircleImageView)findViewById(R.id.driver_photo);
+        relativeLayout = findViewById(R.id.rell2);
+
+        callCustom = (ImageView)findViewById(R.id.call_to_driver);
+
+
+        relativeLayout.setVisibility(View.GONE);
 
         settingDriverButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -114,6 +138,8 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
                     customID = snapshot.getValue().toString();
 
                     AssignedCustomPosition();
+
+                    getAssignedCustomInformation();
                 }
                 else {
                     customID = "";
@@ -134,8 +160,55 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
         });
     }
 
+    private void getAssignedCustomInformation() {
+        relativeLayout.setVisibility(View.VISIBLE);
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference()
+                .child("Users").child("Customers").child(customID);
+
+        reference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists() && snapshot.getChildrenCount() > 0) {
+                    String name = snapshot.child("name").getValue().toString();
+                    String phone = snapshot.child("phone").getValue().toString();
+
+                    txtName.setText(name);
+                    txtPhone.setText(phone);
+
+                    callCustom.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int permissionCheck = ContextCompat.checkSelfPermission(DriverMapsActivity.this, Manifest.permission.CALL_PHONE);
+
+                            if(permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(
+                                        DriverMapsActivity.this, new String[] {Manifest.permission.CALL_PHONE}, 123
+                                );
+                            }
+                            else{
+                                Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel " + phone));
+                                startActivity(intent);
+                            }
+                        }
+                    });
+
+                    if(snapshot.hasChild("image")) {
+                        String image = snapshot.child("image").getValue().toString();
+                        Picasso.get().load(image).into(customPhoto);
+                    }
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
     private void AssignedCustomPosition() {
-        AssignedCustomPositionRef = FirebaseDatabase.getInstance().getReference().child("Customer Requests")
+        AssignedCustomPositionRef = FirebaseDatabase.getInstance().getReference().child("Custom Requests")
                 .child(customID).child("l");
 
         AssignedCustomPositionListener = AssignedCustomPositionRef.addValueEventListener(new ValueEventListener() {
@@ -145,7 +218,7 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
                     List<Object> customerPositionMap = (List<Object>)snapshot.getValue();
                     double LocationLat = 0;
                     double LocationLng = 0;
-
+                    getAssignedCustomInformation();
                     if (customerPositionMap.get(0) != null) {
                         LocationLat = Double.parseDouble(customerPositionMap.get(0).toString());
                     }
@@ -153,9 +226,13 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
                     if (customerPositionMap.get(1) != null) {
                         LocationLng = Double.parseDouble(customerPositionMap.get(1).toString());
                     }
-                    LatLng CustomLatLng = new LatLng(LocationLat, LocationLng);
-                    PickUpMarker = mMap.addMarker(new MarkerOptions().position(CustomLatLng)
+
+                    LatLng DriverLatLng = new LatLng(LocationLat, LocationLng);
+
+                    PickUpMarker = mMap.addMarker(new MarkerOptions().position(DriverLatLng)
                             .title("Забрать клиента тут").icon(BitmapDescriptorFactory.fromResource(R.drawable.user)));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(DriverLatLng));
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(16));
                 }
             }
 
@@ -182,8 +259,8 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         locationRequest = new LocationRequest();
-        locationRequest.setInterval(1000);
-        locationRequest.setFastestInterval(1000);
+        locationRequest.setInterval(100000);
+        locationRequest.setFastestInterval(100000);
         locationRequest.setPriority(locationRequest.PRIORITY_HIGH_ACCURACY);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {

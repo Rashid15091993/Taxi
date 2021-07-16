@@ -3,15 +3,18 @@ package com.example.taxi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -75,6 +78,7 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
     private  DatabaseReference DriverLocationRef;
 
     private  ValueEventListener DriverLocationRefListener;
+    private ImageView callDriver;
 
     private TextView txtName, txtPhone, txtCarName;
     private CircleImageView driverPhoto;
@@ -90,6 +94,7 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
         customLogoutButton = (Button)findViewById(R.id.custom_logout_button);
         callTaxiButton = (Button)findViewById(R.id.custom_order_button);
         settingsButton = (Button)findViewById(R.id.custom_setting_button);
+        callDriver = (ImageView)findViewById(R.id.call_to_driver);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -134,8 +139,16 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
 
                 if (requestType){
                     requestType = false;
-                    geoQuery.removeAllListeners();
-                    DriverLocationRef.removeEventListener(DriverLocationRefListener);
+                    GeoFire geofire = new GeoFire(CustomDataBaseRefer);
+                    geofire.removeLocation(customID);
+
+                    if(PickUpMarker != null) {
+                        PickUpMarker.remove();
+                    }
+                    if(driverMarker != null) {
+                        driverMarker.remove();
+                    }
+                    callTaxiButton.setText("Вызвать такси");
 
                     if(driverFound != null) {
                         DriversRef = FirebaseDatabase.getInstance().getReference().child("Users")
@@ -146,16 +159,6 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
                     driverFound = false;
                     radius = 1;
 
-                    GeoFire geoFire = new GeoFire(CustomDataBaseRefer);
-                    geoFire.removeLocation(customID);
-
-                    if(PickUpMarker != null) {
-                        PickUpMarker.remove();
-                    }
-                    if(driverMarker != null) {
-                        driverMarker.remove();
-                    }
-                    callTaxiButton.setText("Вызвать такси");
                 }
                 else {
                     requestType = true;
@@ -169,7 +172,6 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
                     callTaxiButton.setText("Поиск водителя...");
                     getNearbyDrivers();
                 }
-
             }
         });
     }
@@ -191,8 +193,8 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
     @Override
     public void onConnected(@Nullable  Bundle bundle) {
         locationRequest = new LocationRequest();
-        locationRequest.setInterval(1000);
-        locationRequest.setFastestInterval(1000);
+        locationRequest.setInterval(100000);
+        locationRequest.setFastestInterval(100000);
         locationRequest.setPriority(locationRequest.PRIORITY_HIGH_ACCURACY);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -296,7 +298,7 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
     }
 
     private void GetDriverLocation() {
-        DriverLocationRefListener = DriverLocationRef.child(driverFoundID).child("l")
+        DriverLocationRefListener = DriverLocationRef.child("Driver Working").child("l")
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -364,6 +366,23 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
                     txtName.setText(name);
                     txtPhone.setText(phone);
                     txtCarName.setText(carname);
+
+                    callDriver.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            int permissionCheck = ContextCompat.checkSelfPermission(CustomMapsActivity.this, Manifest.permission.CALL_PHONE);
+
+                            if(permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(
+                                        CustomMapsActivity.this, new String[] {Manifest.permission.CALL_PHONE}, 123
+                                );
+                            }
+                            else{
+                                Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel " + phone));
+                                startActivity(intent);
+                            }
+                        }
+                    });
 
                     if(snapshot.hasChild("image")) {
                         String image = snapshot.child("image").getValue().toString();
