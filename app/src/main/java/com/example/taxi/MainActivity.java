@@ -45,12 +45,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                     finally {
                         Intent welcomeIntent = new Intent(MainActivity.this, WelcomeActivity.class);
-                        if(currentUsers != null) {
-                            openMap();
-                        }
-                        else {
-                            startActivity(welcomeIntent);
-                        }
+                        startActivity(welcomeIntent);
+
                     }
 
                 }

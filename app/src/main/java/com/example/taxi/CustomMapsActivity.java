@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -83,10 +84,15 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
     private TextView txtName, txtPhone, txtCarName;
     private CircleImageView driverPhoto;
     private RelativeLayout relativeLayout;
+    public static final int PERMISSIONS_FINE_LOCATION = 99;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
+        }
 
         binding = ActivityCustomMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -193,8 +199,8 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
     @Override
     public void onConnected(@Nullable  Bundle bundle) {
         locationRequest = new LocationRequest();
-        locationRequest.setInterval(100000);
-        locationRequest.setFastestInterval(100000);
+        locationRequest.setInterval(1000);
+        locationRequest.setFastestInterval(1000);
         locationRequest.setPriority(locationRequest.PRIORITY_HIGH_ACCURACY);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -256,7 +262,7 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
             public void onKeyEntered(String key, GeoLocation location) {
                 if(!driverFound && requestType) {
                     driverFound = true;
-                    driverFoundID = key;
+                    final String driverFoundID = key;
 
                     DriversRef = FirebaseDatabase.getInstance().getReference().child("Users")
                             .child("Drivers")
@@ -298,7 +304,7 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
     }
 
     private void GetDriverLocation() {
-        DriverLocationRefListener = DriverLocationRef.child("Driver Working").child("l")
+        DriverLocationRefListener = DriverLocationRef.child(driverFoundID).child("l")
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -307,8 +313,9 @@ public class CustomMapsActivity extends FragmentActivity implements OnMapReadyCa
                             double LocationLat = 0;
                             double LocationLng = 0;
                             callTaxiButton.setText("Водитель найден!");
-                            getDriverInformacion();
+
                             relativeLayout.setVisibility(View.VISIBLE);
+                            getDriverInformacion();
 
                             if (driverLocationMap.get(0) != null) {
                                 LocationLat = Double.parseDouble(driverLocationMap.get(0).toString());

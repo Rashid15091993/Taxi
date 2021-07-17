@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -72,10 +73,15 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
     private TextView txtName, txtPhone, txtCarName;
     private CircleImageView customPhoto;
     private RelativeLayout relativeLayout;
+    public static final int PERMISSIONS_FINE_LOCATION = 99;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
+        }
 
         binding = ActivityDriverMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -216,16 +222,8 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if(snapshot.exists()) {
                     List<Object> customerPositionMap = (List<Object>)snapshot.getValue();
-                    double LocationLat = 0;
-                    double LocationLng = 0;
-                    getAssignedCustomInformation();
-                    if (customerPositionMap.get(0) != null) {
-                        LocationLat = Double.parseDouble(customerPositionMap.get(0).toString());
-                    }
-
-                    if (customerPositionMap.get(1) != null) {
-                        LocationLng = Double.parseDouble(customerPositionMap.get(1).toString());
-                    }
+                    double LocationLat = LocationLat = Double.parseDouble(customerPositionMap.get(0).toString());;
+                    double LocationLng =LocationLng = Double.parseDouble(customerPositionMap.get(1).toString());
 
                     LatLng DriverLatLng = new LatLng(LocationLat, LocationLng);
 
@@ -291,9 +289,9 @@ public class DriverMapsActivity extends FragmentActivity implements OnMapReadyCa
 
             String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
             DatabaseReference DriverAvalablityRef = FirebaseDatabase.getInstance().getReference().child("Driver Available");
-
             GeoFire geoFireAvalablity = new GeoFire(DriverAvalablityRef);
-            geoFireAvalablity.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
+
+            //geoFireAvalablity.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
 
             DatabaseReference DriverWorkingRef = FirebaseDatabase.getInstance().getReference().child("Driver Working");
             GeoFire geoFireWorking = new GeoFire(DriverWorkingRef);
